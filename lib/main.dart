@@ -1,9 +1,16 @@
 import 'package:fl_dictio/owlbot_api_key.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
 import 'package:owlbot_dart/owlbot_dart.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
+const String favoritesBox = "favorites";
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await Hive.openBox(favoritesBox);
   runApp(ProviderScope(child: MyApp()));
 }
 
@@ -36,6 +43,20 @@ final searchControllerProvider =
     StateProvider<TextEditingController>((ref) => TextEditingController());
 
 final searchResultProvider = StateProvider<OwlBotResponse>((ref) => null);
+
+Map<String, dynamic> toMapRes(OwlBotResponse res) => {
+      "word": res.word,
+      "pronounciation": res.pronunciation,
+      "definitions": res.definitions
+          ?.map((def) => {
+                "type": def.type,
+                "emoji": def.emoji,
+                "example": def.example,
+                "image_url": def.imageUrl,
+                "definition": def.definition,
+              })
+          ?.toList(),
+    };
 
 class HomePage extends ConsumerWidget {
   @override
@@ -84,14 +105,31 @@ class HomePage extends ConsumerWidget {
                                 searchResult.word,
                                 style: Theme.of(context).textTheme.headline5,
                               ),
-                              const SizedBox(height: 5.0),
-                              Text(searchResult.pronunciation),
+                              if (searchResult.pronunciation != null) ...[
+                                const SizedBox(height: 5.0),
+                                Text(searchResult.pronunciation),
+                              ],
                             ],
                           ),
                         ),
-                        IconButton(
-                          icon: Icon(Icons.star),
-                          onPressed: () {},
+                        ValueListenableBuilder(
+                          valueListenable: Hive.box(favoritesBox).listenable(),
+                          builder: (context, box, child) => IconButton(
+                            icon: Icon(
+                              Icons.star,
+                              color: box.containsKey(searchResult.word)
+                                  ? Colors.deepOrange
+                                  : null,
+                            ),
+                            onPressed: () {
+                              if (box.containsKey(searchResult.word)) {
+                                box.delete(searchResult.word);
+                              } else {
+                                box.put(
+                                    searchResult.word, toMapRes(searchResult));
+                              }
+                            },
+                          ),
                         ),
                       ],
                     ),
@@ -121,7 +159,7 @@ class HomePage extends ConsumerWidget {
                                   const SizedBox(height: 5.0),
                                   Text("Example: ${e.example}"),
                                 ],
-                                if (e.imageUrl != null)...[
+                                if (e.imageUrl != null) ...[
                                   const SizedBox(height: 10.0),
                                   Image.network(e.imageUrl),
                                 ],
