@@ -1,4 +1,5 @@
 import 'package:fl_dictio/favorites.dart';
+import 'package:fl_dictio/history.dart';
 import 'package:fl_dictio/owlbot_api_key.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,11 +8,13 @@ import 'package:owlbot_dart/owlbot_dart.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 const String favoritesBox = "favorites";
+const String historyBox = "history";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await Hive.openBox(favoritesBox);
+  await Hive.openBox(historyBox);
   runApp(ProviderScope(child: MyApp()));
 }
 
@@ -38,6 +41,7 @@ class MyApp extends StatelessWidget {
       home: HomePage(),
       routes: {
         "favorites": (_) => FavoritesPage(),
+        "history": (_) => HistoryPage(),
       },
     );
   }
@@ -47,20 +51,6 @@ final searchControllerProvider =
     StateProvider<TextEditingController>((ref) => TextEditingController());
 
 final searchResultProvider = StateProvider<OwlBotResponse>((ref) => null);
-
-Map<String, dynamic> toMapRes(OwlBotResponse res) => {
-      "word": res.word,
-      "pronounciation": res.pronunciation,
-      "definitions": res.definitions
-          ?.map((def) => {
-                "type": def.type,
-                "emoji": def.emoji,
-                "example": def.example,
-                "image_url": def.imageUrl,
-                "definition": def.definition,
-              })
-          ?.toList(),
-    };
 
 class HomePage extends ConsumerWidget {
   @override
@@ -99,11 +89,21 @@ class HomePage extends ConsumerWidget {
       bottomNavigationBar: BottomAppBar(
         child: Container(
           height: 50,
-          child: IconButton(
-            icon: Icon(Icons.star),
-            onPressed: () {
-              Navigator.pushNamed(context, 'favorites');
-            },
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.star),
+                onPressed: () {
+                  Navigator.pushNamed(context, 'favorites');
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.history),
+                onPressed: () {
+                  Navigator.pushNamed(context, 'history');
+                },
+              )
+            ],
           ),
         ),
       ),
@@ -111,12 +111,20 @@ class HomePage extends ConsumerWidget {
   }
 
   _search(BuildContext context) async {
+    FocusScope.of(context).requestFocus(FocusNode());
+    final box = Hive.box(historyBox);
     final query = context.read(searchControllerProvider).state.text;
+    if (box.containsKey(query)) {
+      context.read(searchResultProvider).state =
+          OwlBotResponse.fromJson(box.get(query));
+      return;
+    }
     if (query != null && query.isNotEmpty) {
       final res = await OwlBot(token: TOKEN).define(word: query);
       if (res != null) {
-        context.read(searchResultProvider).state = res;
+        Hive.box(historyBox).put(res.word, res.toJson());
       }
+      context.read(searchResultProvider).state = res;
     }
   }
 }
@@ -167,8 +175,7 @@ class DictionaryListItem extends StatelessWidget {
                       if (box.containsKey(dictionaryItem.word)) {
                         box.delete(dictionaryItem.word);
                       } else {
-                        box.put(
-                            dictionaryItem.word, dictionaryItem.toJson());
+                        box.put(dictionaryItem.word, dictionaryItem.toJson());
                       }
                     },
                   ),
