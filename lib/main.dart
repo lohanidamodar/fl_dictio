@@ -1,3 +1,4 @@
+import 'package:fl_dictio/favorites.dart';
 import 'package:fl_dictio/owlbot_api_key.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,6 +36,9 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: HomePage(),
+      routes: {
+        "favorites": (_) => FavoritesPage(),
+      },
     );
   }
 }
@@ -89,91 +93,19 @@ class HomePage extends ConsumerWidget {
         padding: const EdgeInsets.all(16.0),
         children: <Widget>[
           if (searchResult != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12.0, 8.0, 0.0, 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                searchResult.word,
-                                style: Theme.of(context).textTheme.headline5,
-                              ),
-                              if (searchResult.pronunciation != null) ...[
-                                const SizedBox(height: 5.0),
-                                Text(searchResult.pronunciation),
-                              ],
-                            ],
-                          ),
-                        ),
-                        ValueListenableBuilder(
-                          valueListenable: Hive.box(favoritesBox).listenable(),
-                          builder: (context, box, child) => IconButton(
-                            icon: Icon(
-                              Icons.star,
-                              color: box.containsKey(searchResult.word)
-                                  ? Colors.deepOrange
-                                  : null,
-                            ),
-                            onPressed: () {
-                              if (box.containsKey(searchResult.word)) {
-                                box.delete(searchResult.word);
-                              } else {
-                                box.put(
-                                    searchResult.word, toMapRes(searchResult));
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ...searchResult.definitions.map(
-                          (e) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  e.type,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 5.0),
-                                Text(e.definition),
-                                if (e.example != null) ...[
-                                  const SizedBox(height: 5.0),
-                                  Text("Example: ${e.example}"),
-                                ],
-                                if (e.imageUrl != null) ...[
-                                  const SizedBox(height: 10.0),
-                                  Image.network(e.imageUrl),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            )
+            DictionaryListItem(dictionaryItem: searchResult)
         ],
+      ),
+      bottomNavigationBar: BottomAppBar(
+        child: Container(
+          height: 50,
+          child: IconButton(
+            icon: Icon(Icons.star),
+            onPressed: () {
+              Navigator.pushNamed(context, 'favorites');
+            },
+          ),
+        ),
       ),
     );
   }
@@ -186,5 +118,102 @@ class HomePage extends ConsumerWidget {
         context.read(searchResultProvider).state = res;
       }
     }
+  }
+}
+
+class DictionaryListItem extends StatelessWidget {
+  const DictionaryListItem({
+    Key key,
+    @required this.dictionaryItem,
+  }) : super(key: key);
+
+  final OwlBotResponse dictionaryItem;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12.0, 8.0, 0.0, 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        dictionaryItem.word,
+                        style: Theme.of(context).textTheme.headline5,
+                      ),
+                      if (dictionaryItem.pronunciation != null) ...[
+                        const SizedBox(height: 5.0),
+                        Text(dictionaryItem.pronunciation),
+                      ],
+                    ],
+                  ),
+                ),
+                ValueListenableBuilder(
+                  valueListenable: Hive.box(favoritesBox).listenable(),
+                  builder: (context, box, child) => IconButton(
+                    icon: Icon(
+                      Icons.star,
+                      color: box.containsKey(dictionaryItem.word)
+                          ? Colors.deepOrange
+                          : null,
+                    ),
+                    onPressed: () {
+                      if (box.containsKey(dictionaryItem.word)) {
+                        box.delete(dictionaryItem.word);
+                      } else {
+                        box.put(
+                            dictionaryItem.word, dictionaryItem.toJson());
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ...dictionaryItem.definitions.map(
+                  (e) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          e.type,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 5.0),
+                        Text(e.definition),
+                        if (e.example != null) ...[
+                          const SizedBox(height: 5.0),
+                          Text("Example: ${e.example}"),
+                        ],
+                        if (e.imageUrl != null) ...[
+                          const SizedBox(height: 10.0),
+                          Image.network(e.imageUrl),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
