@@ -47,7 +47,7 @@ class OwlBotDefinitionAdapter extends TypeAdapter<OwlBotDefinition> {
     writer.writeString(obj.definition);
     writer.writeString(obj.type);
     writer.writeString(obj.emoji ?? '');
-    writer.writeString(obj.example);
+    writer.writeString(obj.example ?? '');
     writer.writeString(obj.imageUrl ?? '');
   }
 }
