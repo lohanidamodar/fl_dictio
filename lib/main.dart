@@ -1,6 +1,7 @@
 import 'package:fl_dictio/favorites.dart';
 import 'package:fl_dictio/history.dart';
 import 'package:fl_dictio/owlbot_api_key.dart';
+import 'package:fl_dictio/owlbot_res_adapter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
@@ -13,8 +14,10 @@ const String historyBox = "history";
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
-  await Hive.openBox(favoritesBox);
-  await Hive.openBox(historyBox);
+  Hive.registerAdapter(OwlBotResAdapter());
+  Hive.registerAdapter(OwlBotDefinitionAdapter());
+  await Hive.openBox<OwlBotResponse>(favoritesBox);
+  await Hive.openBox<OwlBotResponse>(historyBox);
   runApp(ProviderScope(child: MyApp()));
 }
 
@@ -112,17 +115,16 @@ class HomePage extends ConsumerWidget {
 
   _search(BuildContext context) async {
     FocusScope.of(context).requestFocus(FocusNode());
-    final box = Hive.box(historyBox);
+    final box = Hive.box<OwlBotResponse>(historyBox);
     final query = context.read(searchControllerProvider).state.text;
     if (box.containsKey(query)) {
-      context.read(searchResultProvider).state =
-          OwlBotResponse.fromJson(box.get(query));
+      context.read(searchResultProvider).state = box.get(query);
       return;
     }
     if (query != null && query.isNotEmpty) {
       final res = await OwlBot(token: TOKEN).define(word: query);
       if (res != null) {
-        Hive.box(historyBox).put(res.word, res.toJson());
+        box.put(res.word, res);
       }
       context.read(searchResultProvider).state = res;
     }
@@ -163,7 +165,8 @@ class DictionaryListItem extends StatelessWidget {
                   ),
                 ),
                 ValueListenableBuilder(
-                  valueListenable: Hive.box(favoritesBox).listenable(),
+                  valueListenable:
+                      Hive.box<OwlBotResponse>(favoritesBox).listenable(),
                   builder: (context, box, child) => IconButton(
                     icon: Icon(
                       Icons.star,
@@ -175,7 +178,7 @@ class DictionaryListItem extends StatelessWidget {
                       if (box.containsKey(dictionaryItem.word)) {
                         box.delete(dictionaryItem.word);
                       } else {
-                        box.put(dictionaryItem.word, dictionaryItem.toJson());
+                        box.put(dictionaryItem.word, dictionaryItem);
                       }
                     },
                   ),

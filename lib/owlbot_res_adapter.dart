@@ -7,9 +7,12 @@ class OwlBotResAdapter extends TypeAdapter<OwlBotResponse> {
     Map<String, dynamic> data = {
       "word": reader.readString(),
       "pronounciation": reader.readString(),
-      "definitions": reader.readList(),
     };
-    return OwlBotResponse.fromJson(data);
+      var definitions = reader.readList();
+    final res = OwlBotResponse.fromJson(data);
+    res.definitions = List<OwlBotDefinition>.from( definitions);
+    return res;
+    
   }
 
   @override
@@ -18,7 +21,7 @@ class OwlBotResAdapter extends TypeAdapter<OwlBotResponse> {
   @override
   void write(BinaryWriter writer, OwlBotResponse obj) {
     writer.writeString(obj.word);
-    writer.writeString(obj.pronunciation);
+    writer.writeString(obj.pronunciation ?? '');
     writer.writeList(obj.definitions);
   }
 }
@@ -43,8 +46,8 @@ class OwlBotDefinitionAdapter extends TypeAdapter<OwlBotDefinition> {
   void write(BinaryWriter writer, OwlBotDefinition obj) {
     writer.writeString(obj.definition);
     writer.writeString(obj.type);
-    writer.writeString(obj.emoji);
+    writer.writeString(obj.emoji ?? '');
     writer.writeString(obj.example);
-    writer.writeString(obj.imageUrl);
+    writer.writeString(obj.imageUrl ?? '');
   }
 }

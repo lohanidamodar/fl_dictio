@@ -12,7 +12,7 @@ class HistoryPage extends StatelessWidget {
         title: Text('History'),
       ),
       body: ValueListenableBuilder(
-        valueListenable: Hive.box(historyBox).listenable(),
+        valueListenable: Hive.box<OwlBotResponse>(historyBox).listenable(),
         builder: (context, box, child) {
           final favs = box.values;
           if(favs.isEmpty) {
@@ -24,7 +24,7 @@ class HistoryPage extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             children: <Widget>[
               ...favs.map((fav) {
-                final res = OwlBotResponse.fromJson(fav);
+                final res = fav;
                 return DictionaryListItem(
                   dictionaryItem: res,
                 );
