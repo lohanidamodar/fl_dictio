@@ -6,7 +6,7 @@ class OwlBotResAdapter extends TypeAdapter<OwlBotResponse> {
   OwlBotResponse read(BinaryReader reader) {
     Map<String, dynamic> data = {
       "word": reader.readString(),
-      "pronounciation": reader.readString(),
+      "pronunciation": reader.readString(),
     };
       var definitions = reader.readList();
     final res = OwlBotResponse.fromJson(data);
