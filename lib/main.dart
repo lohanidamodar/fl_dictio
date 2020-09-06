@@ -60,6 +60,7 @@ final loadingProvider = StateProvider<bool>((ref) => false);
 final errorProvider = StateProvider<String>((ref) => '');
 
 class HomePage extends ConsumerWidget {
+  final hBox = Hive.box<OwlBotResponse>(historyBox);
   @override
   Widget build(BuildContext context, watch) {
     final searchResult = watch(searchResultProvider).state;
@@ -107,7 +108,7 @@ class HomePage extends ConsumerWidget {
           ],
           if (searchResult != null)
             DictionaryListItem(dictionaryItem: searchResult),
-          if (searchResult == null) ...[
+          if (searchResult == null && hBox.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.only(
                 left: 8.0,
@@ -121,8 +122,16 @@ class HomePage extends ConsumerWidget {
               ),
             ),
             DictionaryListItem(
-              dictionaryItem: Hive.box<OwlBotResponse>(historyBox).getAt(0),
+              dictionaryItem: hBox.getAt(0),
             ),
+          ],
+          if (searchResult == null && hBox.isEmpty) ...[
+            Card(
+              child: ListTile(
+                title: Text(
+                    "You haven't used the disctionary, search some words to learn the definitions and more"),
+              ),
+            )
           ],
         ],
       ),
@@ -256,7 +265,8 @@ class DictionaryListItem extends StatelessWidget {
                               const SizedBox(height: 5.0),
                               Text("Example: ${e.example}"),
                             ],
-                            if (e.imageUrl != null && e.imageUrl.isNotEmpty) ...[
+                            if (e.imageUrl != null &&
+                                e.imageUrl.isNotEmpty) ...[
                               const SizedBox(height: 10.0),
                               Image.network(e.imageUrl),
                             ],
