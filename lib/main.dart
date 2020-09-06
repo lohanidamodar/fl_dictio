@@ -67,28 +67,29 @@ class HomePage extends ConsumerWidget {
     final error = watch(errorProvider).state;
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 0,
         title: TextField(
           controller: watch(searchControllerProvider).state,
           decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
-            border: OutlineInputBorder(),
-          ),
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+              border: UnderlineInputBorder(),
+              suffix: IconButton(
+                padding: const EdgeInsets.all(4.0),
+                icon: Icon(
+                  Icons.clear,
+                  size: 16.0,
+                ),
+                onPressed: () {
+                  context.read(searchControllerProvider).state.clear();
+                },
+              ),
+              hintText: "enter word to search"),
           textInputAction: TextInputAction.search,
           onEditingComplete: () {
             _search(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: watch(loadingProvider).state
-                ? CircularProgressIndicator()
-                : Icon(Icons.search),
-            onPressed: () {
-              _search(context);
-            },
-          )
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
@@ -160,12 +161,12 @@ class HomePage extends ConsumerWidget {
   }
 
   _search(BuildContext context) async {
+    FocusScope.of(context).requestFocus(FocusNode());
     final query = context.read(searchControllerProvider).state.text;
     if (query == null || query.isEmpty || context.read(loadingProvider).state)
       return;
     context.read(errorProvider).state = '';
     context.read(loadingProvider).state = true;
-    FocusScope.of(context).requestFocus(FocusNode());
     final box = Hive.box<OwlBotResponse>(historyBox);
     if (box.containsKey(query)) {
       context.read(searchResultProvider).state = box.get(query);
