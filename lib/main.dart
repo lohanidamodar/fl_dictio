@@ -54,6 +54,7 @@ final searchControllerProvider =
     StateProvider<TextEditingController>((ref) => TextEditingController());
 
 final searchResultProvider = StateProvider<OwlBotResponse>((ref) => null);
+final loadingProvider = StateProvider<bool>((ref) => false);
 
 class HomePage extends ConsumerWidget {
   @override
@@ -75,7 +76,7 @@ class HomePage extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.search),
+            icon: watch(loadingProvider).state ? CircularProgressIndicator() :  Icon(Icons.search),
             onPressed: () {
               _search(context);
             },
@@ -114,9 +115,11 @@ class HomePage extends ConsumerWidget {
   }
 
   _search(BuildContext context) async {
+    final query = context.read(searchControllerProvider).state.text;
+    if(query == null || query.isEmpty || context.read(loadingProvider).state) return;
+    context.read(loadingProvider).state = true;
     FocusScope.of(context).requestFocus(FocusNode());
     final box = Hive.box<OwlBotResponse>(historyBox);
-    final query = context.read(searchControllerProvider).state.text;
     if (box.containsKey(query)) {
       context.read(searchResultProvider).state = box.get(query);
       return;
@@ -128,6 +131,7 @@ class HomePage extends ConsumerWidget {
       }
       context.read(searchResultProvider).state = res;
     }
+    context.read(loadingProvider).state = false;
   }
 }
 
