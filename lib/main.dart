@@ -256,7 +256,7 @@ class DictionaryListItem extends StatelessWidget {
                               const SizedBox(height: 5.0),
                               Text("Example: ${e.example}"),
                             ],
-                            if (e.imageUrl != null) ...[
+                            if (e.imageUrl != null && e.imageUrl.isNotEmpty) ...[
                               const SizedBox(height: 10.0),
                               Image.network(e.imageUrl),
                             ],
