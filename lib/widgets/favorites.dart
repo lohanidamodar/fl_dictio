@@ -1,4 +1,5 @@
-import 'package:fl_dictio/main.dart';
+import 'package:fl_dictio/constants.dart';
+import 'package:fl_dictio/widgets/dictionary_item.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hive/hive.dart';
